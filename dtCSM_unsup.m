@@ -63,8 +63,8 @@ end
     
 
 %If pretraining needs to be reused
-if ~exist('outFileStandarization','var') || isempty(outFileStandarization)
-    outFilePretrainNetwork='network2.mat'   
+if ~exist('outFilePretrainNetwork','var') || isempty(outFilePretrainNetwork)
+    outFilePretrainNetwork='network2.mat';
 end
 
 save(outFilePretrainNetwork,'network2');
