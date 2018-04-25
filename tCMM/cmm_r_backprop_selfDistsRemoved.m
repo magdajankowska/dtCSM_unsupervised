@@ -51,7 +51,8 @@ function [network,filename] = cmm_r_backprop_selfDistsRemoved(network, train_X, 
     end
     
     % Initialize some variables
-    ind = 1:n;
+    %ind = 1:n;
+    ind = randperm(n);
 	lambda = 0;
     err = zeros(max_iter, 1);
     curX = cell(floor(n ./ batch_size), 1);
