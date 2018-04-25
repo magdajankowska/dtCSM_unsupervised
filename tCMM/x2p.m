@@ -10,7 +10,9 @@ function [P, beta] = x2p(X, u, tol)
 % by tol (default = 1e-4).
 % The function returns the final Gaussian kernel in P, as well as the 
 % employed precisions per instance in beta.
-%
+% %IMPORTANT: after adding scalling of data, for each instance separately, beta values
+%             cannot be compared between each other, and so are rather meaningless
+%M. Jankowska: added scalling of data - see below
 
     
     if ~exist('u', 'var') || isempty(u)
@@ -44,7 +46,37 @@ function [P, beta] = x2p(X, u, tol)
         betamax = Inf;
         
         % Compute the Gaussian kernel and entropy for the current precision
-        Di = D(i, [1:i-1 i+1:end]);
+        Di = D(i, [1:i-1 i+1:end]) ;
+        %disp(['for instance: ' num2str(i)]);
+		%disp(["min(min(Di)) orig " num2str(min(min(Di)))]);
+		%disp(["max(max(Di)) orig " num2str(max(max(Di)))]);
+
+		%M.Jankowska:
+		%if the distances (Di) are large, the values of 
+		%the exponent funciton of the Gausian kernel are exactly zero,
+		%due to the numerical precision
+		%If that happens for all Di, i.e., even if the minimum of Di is too
+		%large to produce non-zero value of the exponent function,
+		%then the normalization factor in Hbeta function become 0,
+		%and so through division by zero the P-values become NaN 
+		%In order to fix it, the distances are scalled by dividing them
+		%by the minimum of Di (unless this mininum is less than 1.):
+		
+		scale=max(1,min(max(Di,0)));
+        Di = Di ./ scale;
+        
+        %Notice that if distances were small enough, so the "division by zero"
+        %would not appear even without scalling, then scalling does not affect P values obtained below
+        %(they are not necessary identical to the ones that would be obtained without scalling, 
+        %due to the numerical precision and stopping condition, 
+        %but are obtained in exactly the same procedure)
+        %but it does affect beta values (see code below)
+        %As such, with separate scalling of each instance, beta values cannot be compared between instances.
+        
+		%disp(['scale ' num2str(scale)]);
+		%disp(["min(min(Di)) scaled " num2str(min(min(Di)))]);
+		%disp(["max(max(Di)) scaled " num2str(max(max(Di)))]);
+
         [H, thisP] = Hbeta(Di, beta(i));
         
         % Evaluate whether the perplexity is within tolerance
@@ -78,9 +110,13 @@ function [P, beta] = x2p(X, u, tol)
         % Set the final row of P
         P(i, [1:i - 1, i + 1:end]) = thisP;
     end    
-    disp(['Mean value of sigma: ' num2str(mean(sqrt(1 ./ beta)))]);
-    disp(['Minimum value of sigma: ' num2str(min(sqrt(1 ./ beta)))]);
-    disp(['Maximum value of sigma: ' num2str(max(sqrt(1 ./ beta)))]);
+    
+    %Notice that beta values (and so sigma values) cannot be now compared
+    %between instances, as they were obtained for data scalled
+    %independently for each instance
+    %disp(['Mean value of sigma: ' num2str(mean(sqrt(1 ./ beta)))]);
+    %disp(['Minimum value of sigma: ' num2str(min(sqrt(1 ./ beta)))]);
+    %disp(['Maximum value of sigma: ' num2str(max(sqrt(1 ./ beta)))]);
 end
     
 
